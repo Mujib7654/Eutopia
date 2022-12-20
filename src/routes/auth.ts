@@ -63,8 +63,19 @@ router.post(
   }
 );
 
-router.post("/logout", async (req: Request, res: Response) => {
-  await signOut(getAuth());
+router.get("/user", async (req: Request, res: Response) => {
+  try {
+    const { authorization } = req.headers;
 
-  res.json({ message: "User logged out." });
+    if (!authorization)
+      return res.status(401).json({ message: "Unauthorized." });
+
+    const token = (authorization as string).split(" ")[1];
+
+    const user = await admin.auth().verifyIdToken(token);
+
+    res.json(user);
+  } catch (error) {
+    res.status(401).json({ message: "Unauthorized" });
+  }
 });
