@@ -1,21 +1,5 @@
 const EVENTS = [
   {
-    name: "event1",
-    organizer: "organizer1",
-    fees: 100,
-    memberCount: 10,
-    coordinators: [
-      {
-        name: "coordinator1",
-        phone: "1234567890",
-      },
-    ],
-    introduction: `introduction1`,
-    rules: `rules1`,
-    bannerUrl: "bannerUrl1",
-    organizerLogoUrl: "organizerLogoUrl1",
-  },
-  {
     name: "What if?",
     organizer: "Theatrix",
     fees: 200,
@@ -43,7 +27,7 @@ const EVENTS = [
     name: "Crusade of Conceptions",
     organizer: "UEMMUN Student Chapter",
     fees: 100,
-    memberCount: 3+1,
+    memberCount: 4,
     coordinators: [
       {
         name: "Md Fuzail",
@@ -55,7 +39,7 @@ const EVENTS = [
       },
       {
         name: "Shreya Chatterjee",
-        phone:"6205056962",
+        phone: "6205056962",
       },
     ],
     introduction: `The power of one's rationalization is a contributing factor towards their cognitive and intellectual wit. What better way to enhance these skills than to battle it out in Crusade Of Conceptions, a multilingual debate competition organized by Eutopia. This event is designed to allow you to audaciously put forward your unapologetic opinions, for we all know the only way to find your voice is to use it.`,
@@ -217,7 +201,6 @@ const EVENTS = [
         name: "Agniva Mahata",
         phone: "6303427934",
       },
-
     ],
     introduction: `Let's rewind the time. Boîte à rythme dates back centuries, to the tabla bols used in North Indian music that were used to imitate the tabla drums. Other forms of vocal percussion have evolved since then, including the intentionally raspy vocal quality used in African spiritual music to the scatting and bass hums in jazz and blues music. Today this game of beats has become more widespread in mainstream culture, and Eutopia is honoring it by organizing Beat It. An event dedicated to the Boîte à rythme community, designed to give you a life time opportunity to conquer the stage with your beats and showcase an electrifying performance. Let the beat drop...`,
     rules: null,
@@ -345,3 +328,5 @@ const EVENTS = [
     organizerLogoUrl: null,
   },
 ];
+
+export default EVENTS;

@@ -8,6 +8,8 @@ import FirebaseAdmin, { ServiceAccount } from "firebase-admin";
 import keys from "./secrets/keys.json";
 import firebaseConfig from "./secrets/firebase-config.json";
 import { router as AuthRouter } from "./routes/auth";
+import { router as ResgisterRouter } from "./routes/register";
+import { router as EventRouter } from "./routes/event";
 
 import router from "./routes";
 
@@ -38,6 +40,8 @@ try {
 
 app.use("/", router);
 app.use("/auth", AuthRouter);
+app.use("/register", ResgisterRouter);
+app.use("/event", EventRouter);
 
 app.listen(PORT, () => {
   try {

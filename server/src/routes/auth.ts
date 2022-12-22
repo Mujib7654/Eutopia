@@ -2,6 +2,7 @@ import admin from "firebase-admin";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { z } from "zod";
 import { Request, Response, Router } from "express";
+import { getHouse } from "../helpers/getHouse";
 
 import { validateSchema } from "../middlewares/validateSchema";
 
@@ -24,14 +25,36 @@ router.post(
     try {
       const { email, password, first_name, last_name, phone } = req.body;
 
-      const user = await admin.auth().createUser({
+      // generate a random house for the user
+      const house = getHouse();
+
+      const authUser = await admin.auth().createUser({
         email,
         password,
         displayName: `${first_name} ${last_name}`,
         phoneNumber: `+91${phone}`,
       });
 
-      res.status(201).json(user);
+      try {
+        const user = {
+          id: authUser.uid,
+          email,
+          first_name,
+          last_name,
+          phone,
+          house,
+        };
+
+        await admin.firestore().collection("users").doc(authUser.uid).set(user);
+
+        const response = { ...authUser, user };
+
+        res.status(201).json(response);
+      } catch (error) {
+        console.error(error);
+        await admin.auth().deleteUser(authUser.uid);
+        return res.status(500).json({ message: "Internal server error." });
+      }
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal server error." });
@@ -72,9 +95,17 @@ router.get("/user", async (req: Request, res: Response) => {
 
     const token = (authorization as string).split(" ")[1];
 
-    const user = await admin.auth().verifyIdToken(token);
+    const authUser = await admin.auth().verifyIdToken(token);
 
-    res.json(user);
+    const user = await admin
+      .firestore()
+      .collection("users")
+      .doc(authUser.uid)
+      .get();
+
+    const response = { ...authUser, user: user.data() };
+
+    res.json(response);
   } catch (error) {
     res.status(401).json({ message: "Unauthorized" });
   }
