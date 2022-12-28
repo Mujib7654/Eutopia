@@ -1,5 +1,9 @@
 import admin from "firebase-admin";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { z } from "zod";
 import { Request, Response, Router } from "express";
 import { getHouse } from "../helpers/getHouse";
@@ -108,5 +112,29 @@ router.get("/user", async (req: Request, res: Response) => {
     res.json(response);
   } catch (error) {
     res.status(401).json({ message: "Unauthorized" });
+  }
+});
+
+router.get("/forgot-password", async (req: Request, res: Response) => {
+  try {
+    const { authorization } = req.headers;
+
+    if (!authorization)
+      return res.status(401).json({ message: "Unauthorized" });
+
+    const token = (authorization as string).split(" ")[1];
+
+    try {
+      const authUser = await admin.auth().verifyIdToken(token);
+      await sendPasswordResetEmail(getAuth(), authUser.email as string);
+    } catch (error) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const response = { message: "Password reset email sent." };
+
+    res.json(response);
+  } catch (error) {
+    res.status(401).json({ message: "Internal server erro" });
   }
 });
