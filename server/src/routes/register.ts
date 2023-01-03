@@ -1,5 +1,5 @@
 import admin from "firebase-admin";
-import { z } from "zod";
+import { any, string, z } from "zod";
 import { Request, Response, Router } from "express";
 
 import { validateSchema } from "../middlewares/validateSchema";
@@ -7,16 +7,16 @@ import { validateSchema } from "../middlewares/validateSchema";
 export const router = Router();
 
 const registerSchema = z.object({
-  headers: z.object({
-    authorization: z.string(),
+  query: z.object({
+    eventId: string(),
   }),
-  params: z.object({
-    eventId: z.string(),
+  body: z.object({
+    details: any(),
   }),
 });
 
 router.post(
-  "/register/:eventId",
+  "/",
   validateSchema(registerSchema),
   async (req: Request, res: Response) => {
     try {
@@ -25,12 +25,15 @@ router.post(
       if (!authorization)
         return res.status(401).json({ message: "Unauthorized." });
 
-      const { eventId } = req.params;
+      const { eventId } = req.query;
+      const { details } = req.body;
 
       if (!eventId)
         return res.status(400).json({ message: "Event ID is required." });
 
-      const authUser = await admin.auth().verifyIdToken(authorization);
+      const token = (authorization as string).split(" ")[1];
+
+      const authUser = await admin.auth().verifyIdToken(token);
 
       // get user from db
 
@@ -47,11 +50,68 @@ router.post(
       const event = await admin
         .firestore()
         .collection("events")
-        .doc(eventId)
+        .where("id", "==", eventId)
         .get();
 
-      if (!event.exists) {
+      if (!event) {
         return res.status(404).json({ message: "Event not found." });
+      }
+
+      // check if user has already registered for the event
+      const userEntries = user.data()?.entries || [];
+
+      const userEntry = userEntries?.find(
+        (entry: any) => entry.eventId === eventId
+      );
+
+      if (userEntry) {
+        return res.status(400).json({ message: "Already registered." });
+      }
+
+      // check if event has already registered the user
+      const eventEntries = event.docs[0]?.data().entries || [];
+
+      const eventEntry = eventEntries?.find(
+        (entry: any) => entry.userId === authUser.uid
+      );
+
+      if (eventEntry) {
+        return res.status(400).json({ message: "Already registered." });
+      }
+
+      try {
+        // update event
+        await admin
+          .firestore()
+          .collection("events")
+          .where("id", "==", eventId)
+          .limit(1)
+          .get()
+          .then((snapshot) => {
+            snapshot.forEach((doc) => {
+              doc.ref.update({
+                entries: admin.firestore.FieldValue.arrayUnion({
+                  userId: authUser.uid,
+                  details,
+                }),
+              });
+            });
+          });
+        await admin
+          .firestore()
+          .collection("users")
+          .doc(authUser.uid)
+          .update({
+            entries: admin.firestore.FieldValue.arrayUnion({
+              eventId,
+              details,
+            }),
+          });
+
+        res.status(200).json({ message: "Registered successfully." });
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal server error." });
       }
     } catch (error) {
       console.error(error);
